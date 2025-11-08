@@ -19,7 +19,7 @@ typedef struct fila{                                //Define a struct para a fil
 
 //protótipos das funções
 Fila* criar_fila();
-paciente adicionar_paciente(int id, const char* nome);
+paciente adicionar_paciente(const char* nome);
 int lista_vazia(Fila* fila);
 void liberar_fila(Fila* fila);
 void enfileirar(Fila* fila, paciente dados);
