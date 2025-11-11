@@ -32,16 +32,16 @@ int main()
                 printf("--------------------------------------------\n");
                 printf("Digite o nome do paciente: ");
                 scanf("%49[^\n]", pac.nome);
-                limpar_buffer();
+                // limpar_buffer();
 
                 enfileirar(fila_cliente, pac);
                 printf("Paciente adicionado à fila com sucesso!\n");
-                limpar_buffer();
+                // limpar_buffer();
+                // getchar();e
+                
 
                 printf("Aperte ENTER para retornar ao menu.\n");
-                getchar();
 
-                break;
 }
         case 2:
             // Código para atender próximo paciente
@@ -66,6 +66,7 @@ int main()
                     paciente proximo = fila_cliente->inicio->dados;
                     print_paciente(proximo);
                 }else
+                  printf("Não tem paciente :) , pode tomar cafe tranquilimente");
                 printf("\n");
             }
 
