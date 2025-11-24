@@ -69,58 +69,27 @@ paciente adicionar_paciente(const char *nome) {
 
 // FUNÇÃO PARA VERIFICAR SE A FILA ESTÁ VAZIA --> RETORNA 1 SE ESTIVER VAZIA E 0 SE NÃO ESTIVER
 int lista_vazia(Fila *fila) {
-    // Validação segura de ponteiro
-    if (fila == NULL)
-    {
-        fprintf(stderr, "ERRO: Tentativa de verificar fila NULL.\n");
-        return 1;
-    }
-    // Retorna 1 (verdadeiro) se o tamanho da fila for 0, caso contrário retorna 0 (falso).
-    return fila->tamanho == 0; 
+    if (fila == NULL) return 1;
+    return (fila->inicio == NULL);
 }
 
-// FUNÇÃO PARA VERIFICAR SE A FILA ESTÁ CHEIA --> RETORNA 1 SE ESTIVER CHEIA E 0 SE NÃO ESTIVER
-int lista_cheia(Fila *fila)
-{
-    // Validação segura de ponteiro
-    if (fila == NULL)
-    {
-        fprintf(stderr, "ERRO: Tentativa de verificar fila NULL.\n");
-        return 0;
-    }
-    // Retorna 1 se atingiu o limite máximo de pacientes
-    return fila->tamanho >= MAX_PACIENTES_POR_FILA;
-}
 
-// FUNÇÃO PARA LIBERAR A FILA COM SEGURANÇA
-int liberar_fila(Fila *fila)
-{
-    // Validação segura de ponteiro
-    if (fila == NULL)
-    {
-        fprintf(stderr, "ERRO: Tentativa de liberar fila NULL.\n");
-        return -1;
+// FUNÇÃO PARA LIBERAR A FILA
+void liberar_fila(Fila *fila) {
+    if (fila->inicio == NULL) {
+        free(fila); 
+        return;     
     }
-
     Elemento *atual = fila->inicio; // Ponteiro para percorrer a lista.
-    int contador = 0;
+    Elemento *prox;
 
-    // Percorre cada elemento da fila, liberando a memória de cada um.
-    while (atual != NULL) {
-        Elemento *temp = atual; // Armazena o elemento atual.
-        atual = atual->prox;    // Avança para o próximo elemento.
-        free(temp);             // Libera a memória do elemento atual.
-        contador++;
-    }
+    do {
+        prox = atual->prox;
+        free(atual);
+        atual = prox;
+    } while (atual != fila->inicio);
 
-    // Valida que a estrutura foi liberada corretamente
-    fila->inicio = NULL;
-    fila->fim = NULL;
-    fila->tamanho = 0;
-    free(fila); // Libera a memória da estrutura da fila (cabeçalho).
-    fila = NULL; // Marca como NULL após liberação (boas práticas)
-
-    return contador; // Retorna quantos elementos foram liberados
+free(fila);
 }
 
 // FUNÇÃO PARA ENFILEIRAR UM PACIENTE --> ADICIONAR O PACIENTE NO FINAL DA FILA (FIFO)
@@ -148,25 +117,20 @@ int enfileirar(Fila *fila, paciente dados)
         fprintf(stderr, "ERRO: Falha ao alocar memoria para novo elemento (malloc retornou NULL).\n");
         return -1;
     }
-    
+
     // Preenche os campos do novo elemento.
     novo_elemento->dados = dados; 
-    novo_elemento->prox = NULL; // É o último da fila, então o próximo é NULL.
 
-    // Caso 1: A fila NÃO está vazia.
-    if (fila->fim != NULL) {
-        // O elemento que era o último agora aponta para o novo elemento.
-        fila->fim->prox = novo_elemento; 
-    }
-    
-    // O novo elemento passa a ser o fim da fila.
-    fila->fim = novo_elemento; 
+if (fila->inicio == NULL) {
+    novo_elemento->prox = novo_elemento;
+    fila->inicio = novo_elemento;
+    fila->fim = novo_elemento;
+} else {
+    novo_elemento->prox = fila->inicio;   
+    fila->fim->prox = novo_elemento;
+    fila->fim = novo_elemento;
+}
 
-    // Caso 2: A fila ESTAVA vazia.
-    if (fila->inicio == NULL) {
-        // O novo elemento é o primeiro e o último.
-        fila->inicio = novo_elemento; 
-    }
 
     fila->tamanho++; // Incrementa o contador de tamanho da fila.
     return 0;        // Sucesso
@@ -190,35 +154,22 @@ int desenfileirar(Fila *fila, paciente *dados)
 
     // Verifica se é possível remover (fila não vazia).
     if (lista_vazia(fila)) {
-        fprintf(stderr, "ERRO: Fila vazia. Nao e possivel desenfileirar.\n");
-        return FILA_VAZIA;
-    }
-
-    // Validação de consistência da fila
-    if (fila->inicio == NULL)
-    {
-        fprintf(stderr, "ERRO: Inconsistencia na fila - inicio é NULL mas tamanho > 0.\n");
-        return -1;
-    }
+    printf("Fila vazia.\n");
+    exit(1);
+}
 
     Elemento *temp = fila->inicio;       // Ponteiro para o elemento a ser removido (início).
-
-    // Validação segura antes de acessar dados
-    if (temp == NULL)
-    {
-        fprintf(stderr, "ERRO: Ponteiro de elemento invalido.\n");
-        return -1;
+    paciente dados = temp->dados;        // Armazena os dados do paciente a ser retornado.
+    
+    if (fila->inicio == fila->fim) {
+        // só 1 elemento
+        fila->inicio = NULL;         
+        fila->fim = NULL;           
+    } else {
+        fila->inicio = temp->prox;   
+        fila->fim->prox = fila->inicio; 
     }
 
-    *dados = temp->dados; // Armazena os dados do paciente a ser retornado.
-
-    // O novo início é o próximo elemento.
-    fila->inicio = fila->inicio->prox; 
-
-    // Se o início se tornou NULL, significa que a fila ficou vazia.
-    if (fila->inicio == NULL) {
-        fila->fim = NULL; // O fim também deve ser NULL.
-    }
 
     free(temp);      // Libera a memória do elemento removido.
     fila->tamanho--; // Diminui o tamanho da fila.
@@ -228,7 +179,9 @@ int desenfileirar(Fila *fila, paciente *dados)
 
 // FUNÇÃO PARA OBTER O TAMANHO DA FILA
 int tamanho_fila(Fila *fila) {
+    if (fila == NULL) return 0;
     return fila->tamanho; // Retorna o tamanho armazenado na estrutura.
+
 }
 
 // FUNÇÃO PARA IMPRIMIR OS DADOS DE UM PACIENTE
@@ -238,26 +191,21 @@ void print_paciente(paciente paciente) {
 
 // FUNÇÃO PARA IMPRIMIR A FILA COMPLETA COM SEGURANÇA
 void imprimir_fila(Fila *fila) {
-    // Validação segura de ponteiro
-    if (fila == NULL)
-    {
-        fprintf(stderr, "ERRO: Tentativa de imprimir fila NULL.\n");
+
+    if (lista_vazia(fila)) {            // MODIFICADO
+        printf("Fila vazia.\n");
         return;
     }
 
-    Elemento *atual = fila->inicio; // Ponteiro para percorrer a lista.
+    Elemento *atual = fila->inicio;
+
     printf("--- Conteudo da Fila (Tamanho: %d) ---\n", fila->tamanho);
 
-    while (atual != NULL) {
-        // Validação segura do elemento
-        if (atual == NULL)
-        {
-            fprintf(stderr, "ERRO: Elemento nulo durante iteracao.\n");
-            break;
-        }
-        print_paciente(atual->dados); // Imprime os dados do paciente.
-        atual = atual->prox;          // Avança para o próximo elemento.
-    }
+    do {
+        print_paciente(atual->dados);
+        atual = atual->prox;
+    } while (atual != fila->inicio);    // MODIFICADO
+
     printf("-----------------------------------------\n");
 }
 
