@@ -11,28 +11,43 @@ int main()
     Fila *fila_priori2 = criar_fila(); // Média - Amarelo
     Fila *fila_priori3 = criar_fila(); // Alta - Vermelho
 
+    // Criar grafo do hospital
+    GrafoHospital *grafo_hospital = criar_grafo_hospital();
+    if (!grafo_hospital)
+    {
+        printf("Erro fatal: Falha ao criar grafo do hospital. Encerrando.\n");
+        return 1;
+    }
+
+    // Inserir vértices e arestas do hospital
+    inserir_vertices_hospital(grafo_hospital);
+    int total_arestas = inserir_arestas_hospital(grafo_hospital);
+    printf("Total de conexões inseridas: %d\n\n", total_arestas);
+
     if (!fila_priori1 || !fila_priori2 || !fila_priori3) {
         printf("Erro fatal: Falha ao inicializar as filas. Encerrando.\n");
+        liberar_grafo_hospital(grafo_hospital);
         return 1;
     }
 
     do
     {
-        printf("\n=====================================================\n"); 
-        printf("      Sistema de Gerenciamento de Pacientes\n");       
-        printf("=====================================================\n"); 
-        printf("Selecione uma opção:\n");
-        printf("1. Adicionar paciente à fila\n");
-        printf("2. Atender próximo paciente\n");
+        printf("\n=====================================================\n");
+        printf("   Sistema de Gerenciamento de Pacientes\n");
+        printf("=====================================================\n");
+        printf("Selecione uma opcao:\n");
+        printf("1. Adicionar paciente a fila\n");
+        printf("2. Atender proximo paciente\n");
         printf("3. Exibir filas de pacientes\n");
-        printf("4. Gerar relatorio \n");
-        printf("5. Sair\n");
-        printf("Opção: ");
-     
+        printf("4. Visualizar Grafo do Hospital\n");
+        printf("5. Gerar relatorio \n");
+        printf("6. Sair\n");
+        printf("Opcao: ");
+
         if (scanf("%d", &opcao) != 1) {
             limpar_buffer();
             opcao = -1;
-            printf("Entrada inválida! Digite apenas números.\n"); 
+            printf("Entrada invalida! Digite apenas numeros.\n");
         } else {
             limpar_buffer();
         }
@@ -60,7 +75,7 @@ int main()
                 
                 printf("\nSelecione a prioridade:\n");  
                 printf("1 - Verde (Baixa)\n");
-                printf("2 - Amarelo (Média)\n");
+                printf("2 - Amarelo (Media)\n");
                 printf("3 - Vermelho (Alta)\n");
                 printf("Prioridade: ");
                 
@@ -70,6 +85,16 @@ int main()
                     break;
                 }
                 limpar_buffer();
+
+                // Exibir tabela de setores e capturar selecao
+                int setor_destino = exibir_tabela_setores();
+                if (setor_destino == -1)
+                {
+                    printf("Operacao cancelada. Paciente nao adicionado.\n");
+                    break;
+                }
+
+                printf("Paciente %s sera encaminhado para: %s\n\n", pac.nome, obter_nome_setor(setor_destino));
 
                 if (pac.prioridade == 3) {
                     if (enfileirar(fila_priori3, pac) == 0)
@@ -158,14 +183,26 @@ int main()
 
         case 4:
         {
+            printf("\nVisualizando o Grafo do Hospital...\n");
+            printf("--------------------------------------------\n");
+            imprimir_grafo_hospital(grafo_hospital);
+            printf("\nAperte ENTER para retornar ao menu.\n");
+            getchar();
+        }
+        break;
+
+        case 5:
+        {
             paciente pac = {0};
             Gerar_relatorio(fila_priori1, fila_priori2, fila_priori3, pac);
         }
         break;
-        case 5:
+
+        case 6:
         {
             printf("\nLimpando memoria e encerrando o sistema...\n");
             printf("--------------------------------------------\n");
+            liberar_grafo_hospital(grafo_hospital);
             liberar_todas_filas(fila_priori1, fila_priori2, fila_priori3);
             printf("\nSaindo do sistema. Até logo!\n");
             return 0;
@@ -176,7 +213,7 @@ int main()
             break;
         }
 
-    } while (opcao != 5);
+    } while (opcao != 6);
 
     return 0;
 }

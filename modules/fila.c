@@ -260,3 +260,348 @@ int Gerar_relatorio(Fila *f1, Fila *f2, Fila *f3, paciente paciente) {
 
     return 0;
 }
+
+/* ============================================================
+   FUNÇÕES DO GRAFO DO HOSPITAL
+============================================================ */
+
+// Função para obter o nome do setor
+const char *obter_nome_setor(int setor)
+{
+    switch (setor)
+    {
+    case RECEPCAO:
+        return "Recepcao";
+    case ADMINISTRACAO:
+        return "Administracao";
+    case ENFERMARIA:
+        return "Enfermaria";
+    case UTI:
+        return "UTI";
+    case CENTRO_CIRURGICO:
+        return "Centro Cirurgico";
+    case FARMACIA:
+        return "Farmacia";
+    case ALMOXARIFADO:
+        return "Almoxarifado";
+    case LABORATORIO:
+        return "Laboratorio";
+    case RAIO_X:
+        return "Raio-X";
+    case SAIDA_EMERGENCIA:
+        return "Saida de Emergencia";
+    default:
+        return "Setor Desconhecido";
+    }
+}
+
+/* ============================================================
+   Exibir Tabela de Setores
+============================================================ */
+int exibir_tabela_setores()
+{
+    printf("\n");
+    printf("======================================================\n");
+    printf("        SETORES DISPONIVEIS DO HOSPITAL             \n");
+    printf("======================================================\n\n");
+
+    printf("+----+------------------------------+\n");
+    printf("| ID |          SETOR               |\n");
+    printf("+----+------------------------------+\n");
+
+    for (int i = 0; i < TOTAL_SETORES; i++)
+    {
+        printf("| %2d | %-28s |\n", i, obter_nome_setor(i));
+    }
+
+    printf("+----+------------------------------+\n\n");
+
+    printf("Digite o numero do setor de destino (0-%d): ", TOTAL_SETORES - 1);
+
+    int setor;
+    if (scanf("%d", &setor) != 1)
+    {
+        limpar_buffer();
+        fprintf(stderr, "ERRO: Entrada invalida!\n");
+        return -1;
+    }
+    limpar_buffer();
+
+    if (setor < 0 || setor >= TOTAL_SETORES)
+    {
+        fprintf(stderr, "ERRO: Setor invalido! Digite um numero entre 0 e %d.\n", TOTAL_SETORES - 1);
+        return -1;
+    }
+
+    return setor;
+}
+
+/* ============================================================
+   Criar Grafo do Hospital
+============================================================ */
+GrafoHospital *criar_grafo_hospital()
+{
+    GrafoHospital *grafo = (GrafoHospital *)malloc(sizeof(GrafoHospital));
+    if (!grafo)
+    {
+        fprintf(stderr, "ERRO: Falha ao alocar grafo do hospital.\n");
+        return NULL;
+    }
+
+    grafo->vertices = (VerticeHospital *)malloc(TOTAL_SETORES * sizeof(VerticeHospital));
+    if (!grafo->vertices)
+    {
+        fprintf(stderr, "ERRO: Falha ao alocar vértices do grafo.\n");
+        free(grafo);
+        return NULL;
+    }
+
+    grafo->total_vertices = TOTAL_SETORES;
+
+    // Inicializar todos os vértices
+    for (int i = 0; i < TOTAL_SETORES; i++)
+    {
+        grafo->vertices[i].id = i;
+        snprintf(grafo->vertices[i].nome, sizeof(grafo->vertices[i].nome), "%s", obter_nome_setor(i));
+        grafo->vertices[i].adjacentes = NULL;
+    }
+
+    return grafo;
+}
+
+/* ============================================================
+   Adicionar Aresta (Conexão entre setores)
+============================================================ */
+int adicionar_aresta(GrafoHospital *grafo, int origem, int destino)
+{
+    if (!grafo)
+    {
+        fprintf(stderr, "ERRO: Grafo NULL.\n");
+        return -1;
+    }
+
+    if (origem < 0 || origem >= grafo->total_vertices || destino < 0 || destino >= grafo->total_vertices)
+    {
+        fprintf(stderr, "ERRO: Índice de setor inválido. Origem: %d, Destino: %d\n", origem, destino);
+        return -1;
+    }
+
+    // Criar novo nó de adjacência
+    NoAdjacencia *novo = (NoAdjacencia *)malloc(sizeof(NoAdjacencia));
+    if (!novo)
+    {
+        fprintf(stderr, "ERRO: Falha ao alocar nó de adjacência.\n");
+        return -1;
+    }
+
+    novo->destino = destino;
+    novo->prox = NULL;
+
+    // Inserir no início da lista de adjacência
+    if (grafo->vertices[origem].adjacentes == NULL)
+    {
+        grafo->vertices[origem].adjacentes = novo;
+    }
+    else
+    {
+        // Inserir no final para manter ordem
+        NoAdjacencia *atual = grafo->vertices[origem].adjacentes;
+        while (atual->prox != NULL)
+        {
+            atual = atual->prox;
+        }
+        atual->prox = novo;
+    }
+
+    return 0;
+}
+
+/* ============================================================
+   Inserir Vertices do Hospital
+============================================================ */
+int inserir_vertices_hospital(GrafoHospital *grafo)
+{
+    if (!grafo)
+    {
+        fprintf(stderr, "ERRO: Grafo NULL.\n");
+        return -1;
+    }
+
+    printf("\n=== VERTICES (SETORES DO HOSPITAL) ===\n");
+    for (int i = 0; i < grafo->total_vertices; i++)
+    {
+        printf("[%d] %s\n", i, grafo->vertices[i].nome);
+    }
+    printf("=====================================\n\n");
+
+    return grafo->total_vertices;
+}
+
+/* ============================================================
+   Inserir Arestas do Hospital
+============================================================ */
+int inserir_arestas_hospital(GrafoHospital *grafo)
+{
+    if (!grafo)
+    {
+        fprintf(stderr, "ERRO: Grafo NULL.\n");
+        return -1;
+    }
+
+    int arestas_inseridas = 0;
+
+    // Recepção → Administração, Enfermaria, Saída de Emergência
+    arestas_inseridas += adicionar_aresta(grafo, RECEPCAO, ADMINISTRACAO);
+    arestas_inseridas += adicionar_aresta(grafo, RECEPCAO, ENFERMARIA);
+    arestas_inseridas += adicionar_aresta(grafo, RECEPCAO, SAIDA_EMERGENCIA);
+
+    // Administração → Recepção
+    arestas_inseridas += adicionar_aresta(grafo, ADMINISTRACAO, RECEPCAO);
+
+    // Enfermaria → Recepção, UTI, Farmácia, Raio-X, Laboratório
+    arestas_inseridas += adicionar_aresta(grafo, ENFERMARIA, RECEPCAO);
+    arestas_inseridas += adicionar_aresta(grafo, ENFERMARIA, UTI);
+    arestas_inseridas += adicionar_aresta(grafo, ENFERMARIA, FARMACIA);
+    arestas_inseridas += adicionar_aresta(grafo, ENFERMARIA, RAIO_X);
+    arestas_inseridas += adicionar_aresta(grafo, ENFERMARIA, LABORATORIO);
+
+    // UTI → Enfermaria, Centro Cirúrgico
+    arestas_inseridas += adicionar_aresta(grafo, UTI, ENFERMARIA);
+    arestas_inseridas += adicionar_aresta(grafo, UTI, CENTRO_CIRURGICO);
+
+    // Centro Cirúrgico → UTI, Farmácia, Almoxarifado, Saída de Emergência
+    arestas_inseridas += adicionar_aresta(grafo, CENTRO_CIRURGICO, UTI);
+    arestas_inseridas += adicionar_aresta(grafo, CENTRO_CIRURGICO, FARMACIA);
+    arestas_inseridas += adicionar_aresta(grafo, CENTRO_CIRURGICO, ALMOXARIFADO);
+    arestas_inseridas += adicionar_aresta(grafo, CENTRO_CIRURGICO, SAIDA_EMERGENCIA);
+
+    // Farmácia → Enfermaria, Centro Cirúrgico, Almoxarifado
+    arestas_inseridas += adicionar_aresta(grafo, FARMACIA, ENFERMARIA);
+    arestas_inseridas += adicionar_aresta(grafo, FARMACIA, CENTRO_CIRURGICO);
+    arestas_inseridas += adicionar_aresta(grafo, FARMACIA, ALMOXARIFADO);
+
+    // Almoxarifado → Farmácia, Centro Cirúrgico
+    arestas_inseridas += adicionar_aresta(grafo, ALMOXARIFADO, FARMACIA);
+    arestas_inseridas += adicionar_aresta(grafo, ALMOXARIFADO, CENTRO_CIRURGICO);
+
+    // Laboratório → Enfermaria
+    arestas_inseridas += adicionar_aresta(grafo, LABORATORIO, ENFERMARIA);
+
+    // Raio-X → Enfermaria
+    arestas_inseridas += adicionar_aresta(grafo, RAIO_X, ENFERMARIA);
+
+    // Saída de Emergência → Recepção, Centro Cirúrgico
+    arestas_inseridas += adicionar_aresta(grafo, SAIDA_EMERGENCIA, RECEPCAO);
+    arestas_inseridas += adicionar_aresta(grafo, SAIDA_EMERGENCIA, CENTRO_CIRURGICO);
+
+    return arestas_inseridas;
+}
+
+/* ============================================================
+   Imprimir Setores Conectados
+============================================================ */
+void imprimir_setores_conectados(GrafoHospital *grafo, int setor)
+{
+    if (!grafo || setor < 0 || setor >= grafo->total_vertices)
+    {
+        fprintf(stderr, "ERRO: Grafo ou índice de setor inválido.\n");
+        return;
+    }
+
+    printf("\n[%d] %s conectado a:\n", setor, grafo->vertices[setor].nome);
+
+    NoAdjacencia *atual = grafo->vertices[setor].adjacentes;
+    if (!atual)
+    {
+        printf("  (sem conexões)\n");
+        return;
+    }
+
+    int contador = 0;
+    while (atual)
+    {
+        printf("  -> [%d] %s\n", atual->destino, grafo->vertices[atual->destino].nome);
+        atual = atual->prox;
+        contador++;
+    }
+    printf("  Total de conexoes: %d\n", contador);
+}
+
+/* ============================================================
+   Imprimir Grafo Completo
+============================================================ */
+void imprimir_grafo_hospital(GrafoHospital *grafo)
+{
+    if (!grafo)
+    {
+        fprintf(stderr, "ERRO: Grafo NULL.\n");
+        return;
+    }
+
+    printf("\n=============================================================\n");
+    printf("     ESTRUTURA DO GRAFO DO HOSPITAL - LISTA DE ADJACENCIA\n");
+    printf("=============================================================\n\n");
+
+    for (int i = 0; i < grafo->total_vertices; i++)
+    {
+        imprimir_setores_conectados(grafo, i);
+    }
+
+    printf("\n=============================================================\n");
+    printf("                   RESUMO DO GRAFO\n");
+    printf("  Total de Setores (Vertices): %d\n", grafo->total_vertices);
+
+    int total_arestas = 0;
+    for (int i = 0; i < grafo->total_vertices; i++)
+    {
+        NoAdjacencia *atual = grafo->vertices[i].adjacentes;
+        while (atual)
+        {
+            total_arestas++;
+            atual = atual->prox;
+        }
+    }
+    printf("  Total de Conexoes (Arestas): %d\n", total_arestas);
+    printf("=============================================================\n\n");
+}
+
+/* ============================================================
+   Liberar Grafo do Hospital
+============================================================ */
+int liberar_grafo_hospital(GrafoHospital *grafo)
+{
+    if (!grafo)
+    {
+        fprintf(stderr, "ERRO: Grafo NULL.\n");
+        return -1;
+    }
+
+    int total_liberado = 0;
+
+    // Liberar todas as arestas (nós de adjacência)
+    for (int i = 0; i < grafo->total_vertices; i++)
+    {
+        NoAdjacencia *atual = grafo->vertices[i].adjacentes;
+        while (atual)
+        {
+            NoAdjacencia *temp = atual;
+            atual = atual->prox;
+            free(temp);
+            total_liberado++;
+        }
+        grafo->vertices[i].adjacentes = NULL;
+    }
+
+    // Liberar array de vértices
+    if (grafo->vertices)
+    {
+        free(grafo->vertices);
+        grafo->vertices = NULL;
+    }
+
+    // Liberar estrutura principal do grafo
+    free(grafo);
+
+    printf("Grafo liberado: %d conexões desalocadas.\n", total_liberado);
+    return total_liberado;
+}
