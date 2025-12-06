@@ -40,8 +40,9 @@ int main()
         printf("2. Atender proximo paciente\n");
         printf("3. Exibir filas de pacientes\n");
         printf("4. Visualizar Grafo do Hospital\n");
-        printf("5. Gerar relatorio \n");
-        printf("6. Sair\n");
+        printf("5. Listar Setores Alcançáveis (BFS)\n");
+        printf("6. Gerar relatorio \n");
+        printf("7. Sair\n");
         printf("Opcao: ");
 
         if (scanf("%d", &opcao) != 1) {
@@ -191,14 +192,35 @@ int main()
         }
         break;
 
-        case 5:
+          case 5:
+        {
+            printf("\nListar Setores Alcançáveis usando BFS\n");
+                    printf("--------------------------------------------\n");
+            GrafoHospital *grafo = criar_grafo_hospital();
+            if (!grafo) return 1;
+
+            inserir_arestas_hospital(grafo);
+            imprimir_grafo_hospital(grafo); 
+
+            int setor_inicial = exibir_tabela_setores(); 
+            
+            if (setor_inicial != -1) {
+                bfs(grafo, setor_inicial);
+            }
+            liberar_grafo_hospital(grafo); 
+            
+            return 0;
+        }
+        break;
+
+        case 6:
         {
             paciente pac = {0};
             Gerar_relatorio(fila_priori1, fila_priori2, fila_priori3, pac);
         }
         break;
 
-        case 6:
+        case 7:
         {
             printf("\nLimpando memoria e encerrando o sistema...\n");
             printf("--------------------------------------------\n");
