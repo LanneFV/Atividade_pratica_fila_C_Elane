@@ -605,3 +605,125 @@ int liberar_grafo_hospital(GrafoHospital *grafo)
     printf("Grafo liberado: %d conexões desalocadas.\n", total_liberado);
     return total_liberado;
 }
+
+// ==========================================================
+// FILA AUXILIAR PARA BFS
+// ==========================================================
+
+#define TAM_FILA_BFS TOTAL_SETORES
+
+static int fila_ids[TAM_FILA_BFS];
+static int frente = -1;
+static int tras = -1;
+
+void enfileirar_id(int id_setor)
+{
+    // Verifica se está cheia (Fila Circular)
+    if ((tras + 1) % TAM_FILA_BFS == frente) return;
+    
+    // Inicializa a fila se estiver vazia
+    if (frente == -1) frente = 0;
+    
+    tras = (tras + 1) % TAM_FILA_BFS;
+    fila_ids[tras] = id_setor;
+}
+
+int desenfileirar_id()
+{
+    if (frente == -1) return -1; // Fila vazia
+    
+    int id_setor = fila_ids[frente];
+    
+    // Se era o último elemento
+    if (frente == tras) {
+        frente = -1;
+        tras = -1;
+    } else {
+        frente = (frente + 1) % TAM_FILA_BFS;
+    }
+    return id_setor;
+}
+
+int fila_vazia_id()
+{
+    return frente == -1;
+}
+
+void resetar_fila_id()
+{
+    frente = -1;
+    tras = -1;
+}
+
+// ==========================================================
+// FUNÇÃO BFS (Busca em Largura)
+// ==========================================================
+
+void bfs(GrafoHospital *grafo, int id_setor_inicial)
+{
+    if (!grafo || id_setor_inicial < 0 || id_setor_inicial >= grafo->total_vertices)
+    {
+        fprintf(stderr, "ERRO: Grafo ou setor inicial invalido.\n");
+        return;
+    }
+    
+    int visitado[TOTAL_SETORES];
+    int distancia[TOTAL_SETORES];
+    
+    for (int i = 0; i < TOTAL_SETORES; i++)
+    {
+        visitado[i] = 0;      
+        distancia[i] = -1;    
+    }
+    
+    resetar_fila_id();
+    
+    enfileirar_id(id_setor_inicial);
+    visitado[id_setor_inicial] = 1;
+    distancia[id_setor_inicial] = 0;
+    
+    printf("\n======================================================\n");
+    printf("BUSCA EM LARGURA (BFS) INICIADA  \n");
+    printf("   Setor Inicial: [%d] %s\n", id_setor_inicial, grafo->vertices[id_setor_inicial].nome);
+    printf("======================================================\n\n");
+    
+    printf(" Setores Alcançáveis (Ordem de Nível / Distância):\n");
+    
+    while (!fila_vazia_id())
+    {
+        int u = desenfileirar_id(); 
+        
+        printf("  -> Nivel %d: [%d] %s\n", distancia[u], u, grafo->vertices[u].nome);
+        
+        NoAdjacencia *atual = grafo->vertices[u].adjacentes;
+        
+        while (atual)
+        {
+            int v = atual->destino; 
+            
+         
+            if (visitado[v] == 0)
+            {
+                visitado[v] = 1;     
+                distancia[v] = distancia[u] + 1; 
+                enfileirar_id(v);     
+            }
+            atual = atual->prox;
+        }
+    }
+    
+    printf("\n======================================================\n");
+  
+    printf(" Setores Inalcançáveis (Setores desconectados):\n");
+    int inalcancaveis = 0;
+    for (int i = 0; i < TOTAL_SETORES; i++) {
+        if (distancia[i] == -1) {
+            printf("  - [%d] %s\n", i, grafo->vertices[i].nome);
+            inalcancaveis++;
+        }
+    }
+    if (inalcancaveis == 0) {
+        printf("  - Todos os setores foram alcançados.\n");
+    }
+    printf("======================================================\n");
+}

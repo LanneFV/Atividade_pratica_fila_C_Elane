@@ -96,3 +96,4 @@ void imprimir_setores_conectados(GrafoHospital *grafo, int setor);
 int liberar_grafo_hospital(GrafoHospital *grafo);
 const char *obter_nome_setor(int setor);
 int exibir_tabela_setores();
+void bfs(GrafoHospital *grafo, int id_setor_inicial);
