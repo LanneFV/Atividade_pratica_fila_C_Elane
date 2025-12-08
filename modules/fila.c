@@ -728,19 +728,13 @@ void bfs(GrafoHospital *grafo, int id_setor_inicial)
     printf("======================================================\n");
 }
 
-/* gnt, essa eh a parte da DFS q pediu pra implementar
+/* ============================================================
    BUSCA EM PROFUNDIDADE (DFS) - ANÁLISE DE DEPENDÊNCIAS
-    */
-
-void dfs_visitar(GrafoHospital *grafo, int u, int visitado[], int *tempo) {
-    
-    
     visitado[u] = 1; 
     (*tempo)++;
     int tempo_inicial = *tempo; 
     
     printf("   -> Descoberta (Tempo %d): [%d] %s\n", tempo_inicial, u, grafo->vertices[u].nome);
-    
     
     NoAdjacencia *atual = grafo->vertices[u].adjacentes;
     
@@ -754,10 +748,8 @@ void dfs_visitar(GrafoHospital *grafo, int u, int visitado[], int *tempo) {
         }
         else if (visitado[v] == 1) 
         {
-            
-            // isso indica uma dependência circular
-
-            printf("   ⚠️ ALERTA DE DEPENDÊNCIA CIRCULAR: %s -> %s\n", 
+            // Indica uma dependência circular
+            printf("   ⚠️  ALERTA DE DEPENDÊNCIA CIRCULAR: %s -> %s\n", 
                    grafo->vertices[u].nome, grafo->vertices[v].nome);
         }
         atual = atual->prox;
@@ -791,4 +783,10 @@ void dfs(GrafoHospital *grafo)
         }
     }
     printf("\nAnálise DFS concluída.\n");
+    printf("======================================================\n");
+}
+
+/* ============================================================
+   Tarjan - Encontrar Pontos de Articulacao
+   Saída: imprime setores cuja remoção desconecta o grafo.
 }
